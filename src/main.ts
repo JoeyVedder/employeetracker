@@ -1,12 +1,17 @@
 import inquirer from 'inquirer';
-import { Pool } from 'pg';
+import pkg from 'pg'; 
+import dotenv from 'dotenv';
+const { Pool } = pkg;
+
+dotenv.config();
+
 
 const db = new Pool({
-  user: 'your_username',
+  user: process.env.DB_USER,
   host: 'localhost',
-  database: 'company_db',
-  password: 'your_password',
-  port: 5432, // default port for PostgreSQL
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: 5432,
 });
 
 
@@ -54,7 +59,7 @@ async function mainMenu() {
       await updateEmployeeRole();
       break;
     case 'Exit':
-      db.end(); // Close the PostgreSQL connection pool
+      db.end(); 
       process.exit();
   }
   mainMenu();
