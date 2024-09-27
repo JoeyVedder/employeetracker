@@ -19,12 +19,13 @@ Make sure you have [NodeJs](https://nodejs.org/en/download/prebuilt-installer) i
 
 ## Usage
 
-With the folder open, run npm start to start the application and then you will be able to see the employee tracker!!
+With the folder open, run npm start to start the application and then you will be able to see the employee tracker!! You can click [here](https://youtu.be/2kQ2c9TSA6o)
+
 
 
 
 ## License
-This project is licensed under the MIT.
+MIT [License](https://github.com/JoeyVedder/employeetracker/edit/main/LICENSE).
 
 
 
