@@ -15,11 +15,11 @@ This command-line application provides a user-friendly interface for managing em
 
 ## Installation
 
-Node.js, inquirer and the pg package
+Make sure you have [NodeJs](https://nodejs.org/en/download/prebuilt-installer) installed, then click the CODE button and click download zip. Extract the zip and open the folder in your terminal and type npm i so you can install the necessary dependencies.
 
 ## Usage
 
-N/A
+With the folder open, run npm start to start the application and then you will be able to see the employee tracker!!
 
 
 
