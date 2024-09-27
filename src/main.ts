@@ -1,10 +1,9 @@
 import inquirer from 'inquirer';
-import pkg from 'pg'; 
+import pkg from 'pg';
 import dotenv from 'dotenv';
 const { Pool } = pkg;
 
 dotenv.config();
-
 
 const db = new Pool({
   user: process.env.DB_USER,
@@ -14,9 +13,8 @@ const db = new Pool({
   port: 5432,
 });
 
-
 async function mainMenu() {
-  const choices = [
+  const choices: string[] = [
     'View all departments',
     'View all roles',
     'View all employees',
@@ -24,10 +22,12 @@ async function mainMenu() {
     'Add a role',
     'Add an employee',
     'Update an employee role',
+    'Delete a department',  
+    'Delete an employee',   
     'Exit',
   ];
 
-  const { action } = await inquirer.prompt([
+  const { action }: { action: string } = await inquirer.prompt([
     {
       type: 'list',
       name: 'action',
@@ -58,35 +58,46 @@ async function mainMenu() {
     case 'Update an employee role':
       await updateEmployeeRole();
       break;
+    case 'Delete a department':  
+      await deleteDepartment();
+      break;
+    case 'Delete an employee':   
+      await deleteEmployee();
+      break;
     case 'Exit':
-      db.end(); 
+      await db.end(); 
       process.exit();
   }
   mainMenu();
 }
 
+// Function to view all departments
 async function viewDepartments() {
-  const { rows } = await db.query('SELECT * FROM departments');
+  const { rows }: { rows: { id: number; name: string }[] } = await db.query('SELECT * FROM departments');
   console.log('Departments:');
-  rows.forEach((dept: { id: number; name: string }) => {
+  rows.forEach((dept) => {
     console.log(`ID: ${dept.id}, Name: ${dept.name}`);
   });
 }
 
+// Function to view all roles
 async function viewRoles() {
   const query = `
     SELECT roles.id, roles.title, roles.salary, departments.name AS department
     FROM roles
     JOIN departments ON roles.department_id = departments.id
   `;
-  const { rows } = await db.query(query);
+  const { rows }: { rows: { id: number; title: string; salary: number; department: string }[] } = await db.query(query);
   console.log('Roles:');
-  rows.forEach((role: { id: number; title: string; salary: number; department: string }) => {
+  rows.forEach((role) => {
     console.log(`ID: ${role.id}, Title: ${role.title}, Salary: $${role.salary}, Department: ${role.department}`);
   });
 }
 
+
+// Function to view all employees
 async function viewEmployees() {
+  console.log("Fetching employee data...");
   const query = `
     SELECT employees.id, employees.first_name, employees.last_name, roles.title AS role, departments.name AS department,
            CONCAT(manager.first_name, ' ', manager.last_name) AS manager
@@ -96,14 +107,20 @@ async function viewEmployees() {
     LEFT JOIN employees manager ON employees.manager_id = manager.id
   `;
   const { rows } = await db.query(query);
+  console.log("Employees fetched:", rows); // Add this line to log fetched data
   console.log('Employees:');
   rows.forEach((emp: { id: number; first_name: string; last_name: string; role: string; department: string; manager: string }) => {
     console.log(`ID: ${emp.id}, Name: ${emp.first_name} ${emp.last_name}, Role: ${emp.role}, Department: ${emp.department}, Manager: ${emp.manager || 'None'}`);
   });
 }
 
+
+
+
+
+// Function to add a department
 async function addDepartment() {
-  const { name } = await inquirer.prompt({
+  const { name }: { name: string } = await inquirer.prompt({
     type: 'input',
     name: 'name',
     message: 'Enter the department name:',
@@ -113,8 +130,9 @@ async function addDepartment() {
   console.log(`Added department: ${name}`);
 }
 
+// Function to add a role
 async function addRole() {
-  const { rows: departments } = await db.query('SELECT * FROM departments');
+  const { rows: departments }: { rows: { id: number; name: string }[] } = await db.query('SELECT * FROM departments');
   const { title, salary, department_id } = await inquirer.prompt([
     { type: 'input', name: 'title', message: 'Enter the role title:' },
     { type: 'input', name: 'salary', message: 'Enter the role salary:' },
@@ -122,7 +140,7 @@ async function addRole() {
       type: 'list',
       name: 'department_id',
       message: 'Choose a department:',
-      choices: departments.map((dept: { id: number; name: string }) => ({ name: dept.name, value: dept.id })), // Maps each department to an object with the department name and id for use in a prompt.
+      choices: departments.map((dept) => ({ name: dept.name, value: dept.id })),
     },
   ]);
 
@@ -130,9 +148,10 @@ async function addRole() {
   console.log(`Added role: ${title}`);
 }
 
+// Function to add an employee
 async function addEmployee() {
-  const { rows: roles } = await db.query('SELECT * FROM roles');
-  const { rows: employees } = await db.query('SELECT * FROM employees');
+  const { rows: roles }: { rows: { id: number; title: string }[] } = await db.query('SELECT * FROM roles');
+  const { rows: employees }: { rows: { id: number; first_name: string; last_name: string }[] } = await db.query('SELECT * FROM employees');
   const { firstName, lastName, role_id, manager_id } = await inquirer.prompt([
     { type: 'input', name: 'firstName', message: 'Enter the employee’s first name:' },
     { type: 'input', name: 'lastName', message: 'Enter the employee’s last name:' },
@@ -140,15 +159,15 @@ async function addEmployee() {
       type: 'list',
       name: 'role_id',
       message: 'Choose a role:',
-      choices: roles.map((role: { id: number; title: string }) => ({ name: role.title, value: role.id })), // Maps each role to an object with the role title and id for use in a prompt.
+      choices: roles.map((role) => ({ name: role.title, value: role.id })),
     },
     {
       type: 'list',
       name: 'manager_id',
       message: 'Choose a manager (or none):',
       choices: employees
-        .map((emp: { id: number; first_name: string; last_name: string }) => ({ name: `${emp.first_name} ${emp.last_name}`, value: emp.id })) // Maps each employee to an object with their full name and id, then adds an option for "None" as a manager.
-        .concat([{ name: 'None', value: null as unknown as number }]), // Adds "None" option for manager selection.
+        .map((emp) => ({ name: `${emp.first_name} ${emp.last_name}`, value: emp.id }))
+        .concat([{ name: 'None', value: null as unknown as number }]),
     },
   ]);
 
@@ -156,26 +175,71 @@ async function addEmployee() {
   console.log(`Added employee: ${firstName} ${lastName}`);
 }
 
+// Function to update an employee role
 async function updateEmployeeRole() {
-  const { rows: employees } = await db.query('SELECT * FROM employees');
-  const { rows: roles } = await db.query('SELECT * FROM roles');
+  const { rows: employees }: { rows: { id: number; first_name: string; last_name: string }[] } = await db.query('SELECT * FROM employees');
+  const { rows: roles }: { rows: { id: number; title: string }[] } = await db.query('SELECT * FROM roles');
   const { employee_id, role_id } = await inquirer.prompt([
     {
       type: 'list',
       name: 'employee_id',
       message: 'Choose an employee to update:',
-      choices: employees.map((emp: { id: number; first_name: string; last_name: string }) => ({ name: `${emp.first_name} ${emp.last_name}`, value: emp.id })),
+      choices: employees.map((emp) => ({ name: `${emp.first_name} ${emp.last_name}`, value: emp.id })),
     },
     {
       type: 'list',
       name: 'role_id',
       message: 'Choose a new role:',
-      choices: roles.map((role: { id: number; title: string }) => ({ name: role.title, value: role.id })),
+      choices: roles.map((role) => ({ name: role.title, value: role.id })),
     },
   ]);
 
   await db.query('UPDATE employees SET role_id = $1 WHERE id = $2', [role_id, employee_id]);
   console.log('Employee role updated!');
+}
+
+// Function to delete a department
+async function deleteDepartment(): Promise<void> {
+  const { rows: departments }: { rows: { id: number; name: string }[] } = await db.query('SELECT * FROM departments');
+  if (departments.length === 0) {
+    console.log('No departments available to delete.');
+    return;
+  }
+
+  const { department_id }: { department_id: number } = await inquirer.prompt({
+    type: 'list',
+    name: 'department_id',
+    message: 'Choose a department to delete:',
+    choices: departments.map((dept) => ({
+      name: dept.name,
+      value: dept.id,
+    })),
+  });
+
+  await db.query('DELETE FROM departments WHERE id = $1', [department_id]);
+  console.log('Department deleted!');
+}
+
+// Function to delete an employee
+async function deleteEmployee(): Promise<void> {
+  const { rows: employees }: { rows: { id: number; first_name: string; last_name: string }[] } = await db.query('SELECT * FROM employees');
+  if (employees.length === 0) {
+    console.log('No employees available to delete.');
+    return;
+  }
+
+  const { employee_id }: { employee_id: number } = await inquirer.prompt({
+    type: 'list',
+    name: 'employee_id',
+    message: 'Choose an employee to delete:',
+    choices: employees.map((emp) => ({
+      name: `${emp.first_name} ${emp.last_name}`,
+      value: emp.id,
+    })),
+  });
+
+  await db.query('DELETE FROM employees WHERE id = $1', [employee_id]);
+  console.log('Employee deleted!');
 }
 
 mainMenu();
