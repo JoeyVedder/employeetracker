@@ -19,6 +19,6 @@ INSERT INTO employees (id, first_name, last_name, role_id, manager_id) VALUES
 (1, 'Joey', 'Vedder', 1, 1),  
 (2, 'Tommy', 'Stemler', 2, NULL), 
 (3, 'Elliot', 'Stocker', 3, 4),   
-(4, 'Ian', 'Crockner', 3, NULL),     
+(4, 'Ian', 'Stocker', 3, NULL),     
 (5, 'Hannah', 'Kennamer', 4, NULL)   
 ON CONFLICT (id) DO NOTHING;
